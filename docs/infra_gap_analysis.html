@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관악구 인프라 격차 분석 — 백현진의 여름</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    background: #0f1419;
+    color: #e7e9ea;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 40px 40px 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header p {
+    font-size: 14px;
+    color: #8899a6;
+    line-height: 1.6;
+  }
+
+  .content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 40px;
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+  .metric-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .metric-card.highlight {
+    border-color: rgba(231,76,60,0.5);
+    background: rgba(231,76,60,0.08);
+  }
+  .metric-label {
+    font-size: 11px;
+    color: #8899a6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .metric-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #e7e9ea;
+  }
+  .metric-value.danger { color: #e74c3c; }
+  .metric-rank {
+    font-size: 11px;
+    color: #8899a6;
+    margin-top: 4px;
+  }
+
+  .section {
+    margin-bottom: 40px;
+  }
+  .section h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #e7e9ea;
+  }
+  .section .subtitle {
+    font-size: 13px;
+    color: #8899a6;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .chart-container {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+
+  .bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    gap: 8px;
+  }
+  .bar-label {
+    width: 60px;
+    text-align: right;
+    font-size: 11px;
+    color: #8899a6;
+    flex-shrink: 0;
+  }
+  .bar-label.is-gwanak {
+    color: #e74c3c;
+    font-weight: 700;
+  }
+  .bar-track {
+    flex: 1;
+    height: 20px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+  }
+  .bar-fill span {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+  }
+  .bar-fill.gwanak {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+  }
+  .bar-fill.normal {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+  }
+  .bar-fill.avg {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+  }
+
+  .selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .selector button {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: transparent;
+    color: #8899a6;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .selector button:hover {
+    border-color: rgba(255,255,255,0.3);
+    color: #e7e9ea;
+  }
+  .selector button.active {
+    background: rgba(102,126,234,0.2);
+    border-color: #667eea;
+    color: #667eea;
+  }
+
+  .insight-box {
+    background: rgba(231,76,60,0.08);
+    border: 1px solid rgba(231,76,60,0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .insight-box h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e74c3c;
+    margin-bottom: 8px;
+  }
+  .insight-box p {
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.7;
+  }
+
+  .normalize-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .normalize-toggle button {
+    padding: 6px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent;
+    color: #8899a6;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .normalize-toggle button.active {
+    background: rgba(155,89,182,0.2);
+    border-color: #9b59b6;
+    color: #9b59b6;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 30px;
+    font-size: 11px;
+    color: #555;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer a { color: #667eea; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌊 관악구 수도 인프라 격차 분석</h1>
+  <p>
+    서울 25개 자치구의 하수도 및 부대시설 현황을 비교합니다.<br>
+    관악구는 반지하 가구 29,481가구(서울 최다)를 보유하고 있음에도,<br>
+    침수 방어 인프라는 어느 수준에 머물러 있는가?
+  </p>
+</div>
+
+<div class="content">
+  <!-- 핵심 지표 카드 -->
+  <div id="metric-grid" class="metric-grid"></div>
+
+  <!-- 차트 1: 절대값 비교 -->
+  <div class="section">
+    <h2>자치구별 하수도 인프라 비교</h2>
+    <p class="subtitle">
+      각 지표를 선택하면 서울 25개 구의 순위를 확인할 수 있습니다.
+      <span style="color:#e74c3c;">■</span> 관악구 &nbsp;
+      <span style="color:#3498db;">■</span> 타 자치구 &nbsp;
+      <span style="color:#f39c12;">━</span> 25개 구 평균
+    </p>
+
+    <div class="selector" id="col-selector"></div>
+
+    <div class="normalize-toggle" id="normalize-toggle">
+      <button class="active" onclick="setNormalize('abs')">절대값</button>
+      <button onclick="setNormalize('area')">면적당 (km²)</button>
+      <button onclick="setNormalize('pop')">인구 만명당</button>
+      <button onclick="setNormalize('banjihha')">반지하 1천가구당</button>
+    </div>
+
+    <div class="chart-container">
+      <div class="bar-chart" id="main-chart"></div>
+    </div>
+
+    <div class="insight-box" id="insight-box"></div>
+  </div>
+</div>
+
+<div class="footer">
+  백현진의 여름 · 데이터: 서울 열린데이터광장 하수도 및 부대시설 현황 ·
+  <a href="vulnerability_map_5.html">← 취약성 지도로 돌아가기</a>
+</div>
+
+<script>
+const DATA = [{"gu": "종로구", "is_gwanak": false, "하수도(m)_암거": 38722.0, "하수도(m)_개거": 4937.0, "하수도(m)_관거": 283800.0, "하수도(m)_U형측구": 11001.0, "횡단하수거(m)": 1027.0, "맨홀(개소)": 10126.0, "빗물받이(개소)": 16383.0, "보급률(%)": 100.0, "area": 23.91, "pop": 14.8, "banjihha": 5200}, {"gu": "중구", "is_gwanak": false, "하수도(m)_암거": 26415.0, "하수도(m)_개거": 1524.0, "하수도(m)_관거": 236345.0, "하수도(m)_U형측구": 1259.0, "횡단하수거(m)": 706.0, "맨홀(개소)": 8304.0, "빗물받이(개소)": 15045.0, "보급률(%)": 100.0, "area": 9.96, "pop": 12.7, "banjihha": 4100}, {"gu": "용산구", "is_gwanak": false, "하수도(m)_암거": 37011.0, "하수도(m)_개거": 4416.0, "하수도(m)_관거": 309536.0, "하수도(m)_U형측구": 7258.0, "횡단하수거(m)": 819.0, "맨홀(개소)": 9970.0, "빗물받이(개소)": 17854.0, "보급률(%)": 100.0, "area": 21.87, "pop": 22.9, "banjihha": 6500}, {"gu": "성동구", "is_gwanak": false, "하수도(m)_암거": 43104.0, "하수도(m)_개거": 398.0, "하수도(m)_관거": 246477.0, "하수도(m)_U형측구": 1601.0, "횡단하수거(m)": 705.0, "맨홀(개소)": 8694.0, "빗물받이(개소)": 19332.0, "보급률(%)": 100.0, "area": 16.86, "pop": 29.8, "banjihha": 8800}, {"gu": "광진구", "is_gwanak": false, "하수도(m)_암거": 42085.0, "하수도(m)_개거": 217.0, "하수도(m)_관거": 321336.0, "하수도(m)_U형측구": 238.0, "횡단하수거(m)": 678.0, "맨홀(개소)": 10693.0, "빗물받이(개소)": 25505.0, "보급률(%)": 100.0, "area": 17.06, "pop": 34.5, "banjihha": 8500}, {"gu": "동대문구", "is_gwanak": false, "하수도(m)_암거": 49830.0, "하수도(m)_개거": 1426.0, "하수도(m)_관거": 339480.0, "하수도(m)_U형측구": 378.0, "횡단하수거(m)": 1153.0, "맨홀(개소)": 12386.0, "빗물받이(개소)": 23435.0, "보급률(%)": 100.0, "area": 14.22, "pop": 34.6, "banjihha": 10800}, {"gu": "중랑구", "is_gwanak": false, "하수도(m)_암거": 55063.0, "하수도(m)_개거": 1351.0, "하수도(m)_관거": 355799.0, "하수도(m)_U형측구": 341.0, "횡단하수거(m)": 742.0, "맨홀(개소)": 13025.0, "빗물받이(개소)": 25201.0, "보급률(%)": 100.0, "area": 18.5, "pop": 39.1, "banjihha": 11000}, {"gu": "성북구", "is_gwanak": false, "하수도(m)_암거": 67692.0, "하수도(m)_개거": 2401.0, "하수도(m)_관거": 400840.0, "하수도(m)_U형측구": 5890.0, "횡단하수거(m)": 1128.0, "맨홀(개소)": 15211.0, "빗물받이(개소)": 26899.0, "보급률(%)": 100.0, "area": 24.57, "pop": 43.0, "banjihha": 13500}, {"gu": "강북구", "is_gwanak": false, "하수도(m)_암거": 34581.0, "하수도(m)_개거": 694.0, "하수도(m)_관거": 299125.0, "하수도(m)_U형측구": 522.0, "횡단하수거(m)": 1193.0, "맨홀(개소)": 11199.0, "빗물받이(개소)": 18629.0, "보급률(%)": 100.0, "area": 23.6, "pop": 29.4, "banjihha": 11200}, {"gu": "도봉구", "is_gwanak": false, "하수도(m)_암거": 27314.0, "하수도(m)_개거": 886.0, "하수도(m)_관거": 271750.0, "하수도(m)_U형측구": 1139.0, "횡단하수거(m)": 1209.0, "맨홀(개소)": 9633.0, "빗물받이(개소)": 16549.0, "보급률(%)": 100.0, "area": 20.7, "pop": 31.3, "banjihha": 8400}, {"gu": "노원구", "is_gwanak": false, "하수도(m)_암거": 57713.0, "하수도(m)_개거": 1393.0, "하수도(m)_관거": 347357.0, "하수도(m)_U형측구": 2913.0, "횡단하수거(m)": 770.0, "맨홀(개소)": 11643.0, "빗물받이(개소)": 17631.0, "보급률(%)": 100.0, "area": 35.44, "pop": 50.8, "banjihha": 9800}, {"gu": "은평구", "is_gwanak": false, "하수도(m)_암거": 46032.0, "하수도(m)_개거": 105.0, "하수도(m)_관거": 409095.0, "하수도(m)_U형측구": 599.0, "횡단하수거(m)": 557.0, "맨홀(개소)": 13698.0, "빗물받이(개소)": 23966.0, "보급률(%)": 100.0, "area": 29.71, "pop": 47.0, "banjihha": 12000}, {"gu": "서대문구", "is_gwanak": false, "하수도(m)_암거": 27564.0, "하수도(m)_개거": 419.0, "하수도(m)_관거": 296392.0, "하수도(m)_U형측구": 3563.0, "횡단하수거(m)": 1746.0, "맨홀(개소)": 9251.0, "빗물받이(개소)": 14664.0, "보급률(%)": 100.0, "area": 17.61, "pop": 31.0, "banjihha": 9600}, {"gu": "마포구", "is_gwanak": false, "하수도(m)_암거": 44912.0, "하수도(m)_개거": 237.0, "하수도(m)_관거": 394602.0, "하수도(m)_U형측구": 1886.0, "횡단하수거(m)": 994.0, "맨홀(개소)": 12485.0, "빗물받이(개소)": 24074.0, "보급률(%)": 100.0, "area": 23.87, "pop": 37.2, "banjihha": 10500}, {"gu": "양천구", "is_gwanak": false, "하수도(m)_암거": 61330.0, "하수도(m)_개거": 1277.0, "하수도(m)_관거": 324175.0, "하수도(m)_U형측구": 1583.0, "횡단하수거(m)": 222.0, "맨홀(개소)": 10078.0, "빗물받이(개소)": 22791.0, "보급률(%)": 100.0, "area": 17.4, "pop": 44.5, "banjihha": 7800}, {"gu": "강서구", "is_gwanak": false, "하수도(m)_암거": 76166.0, "하수도(m)_개거": 2747.0, "하수도(m)_관거": 473953.0, "하수도(m)_U형측구": 299.0, "횡단하수거(m)": 406.0, "맨홀(개소)": 13475.0, "빗물받이(개소)": 25275.0, "보급률(%)": 100.0, "area": 41.44, "pop": 56.3, "banjihha": 11800}, {"gu": "구로구", "is_gwanak": false, "하수도(m)_암거": 54904.0, "하수도(m)_개거": 2519.0, "하수도(m)_관거": 337157.0, "하수도(m)_U형측구": 4650.0, "횡단하수거(m)": 802.0, "맨홀(개소)": 11332.0, "빗물받이(개소)": 16420.0, "보급률(%)": 100.0, "area": 20.12, "pop": 40.5, "banjihha": 14200}, {"gu": "금천구", "is_gwanak": false, "하수도(m)_암거": 45039.0, "하수도(m)_개거": 1228.0, "하수도(m)_관거": 207501.0, "하수도(m)_U형측구": null, "횡단하수거(m)": 562.0, "맨홀(개소)": 6625.0, "빗물받이(개소)": 15700.0, "보급률(%)": 100.0, "area": 13.01, "pop": 23.1, "banjihha": 7500}, {"gu": "영등포구", "is_gwanak": false, "하수도(m)_암거": 51538.0, "하수도(m)_개거": 2331.0, "하수도(m)_관거": 409083.0, "하수도(m)_U형측구": 1724.0, "횡단하수거(m)": 217.0, "맨홀(개소)": 12958.0, "빗물받이(개소)": 19515.0, "보급률(%)": 100.0, "area": 24.56, "pop": 38.7, "banjihha": 15800}, {"gu": "동작구", "is_gwanak": false, "하수도(m)_암거": 28252.0, "하수도(m)_개거": 193.0, "하수도(m)_관거": 299042.0, "하수도(m)_U형측구": 400.0, "횡단하수거(m)": 871.0, "맨홀(개소)": 10575.0, "빗물받이(개소)": 19613.0, "보급률(%)": 100.0, "area": 16.35, "pop": 38.7, "banjihha": 12500}, {"gu": "관악구", "is_gwanak": true, "하수도(m)_암거": 39444.0, "하수도(m)_개거": 934.0, "하수도(m)_관거": 367621.0, "하수도(m)_U형측구": 356.0, "횡단하수거(m)": 1229.0, "맨홀(개소)": 12177.0, "빗물받이(개소)": 27458.0, "보급률(%)": 100.0, "area": 29.57, "pop": 49.5, "banjihha": 29481}, {"gu": "서초구", "is_gwanak": false, "하수도(m)_암거": 70623.0, "하수도(m)_개거": 6042.0, "하수도(m)_관거": 486527.0, "하수도(m)_U형측구": 7183.0, "횡단하수거(m)": 731.0, "맨홀(개소)": 13286.0, "빗물받이(개소)": 32287.0, "보급률(%)": 100.0, "area": 47.0, "pop": 43.0, "banjihha": 5100}, {"gu": "강남구", "is_gwanak": false, "하수도(m)_암거": 71124.0, "하수도(m)_개거": 2603.0, "하수도(m)_관거": 619622.0, "하수도(m)_U형측구": 4184.0, "횡단하수거(m)": 723.0, "맨홀(개소)": 16399.0, "빗물받이(개소)": 34490.0, "보급률(%)": 100.0, "area": 39.5, "pop": 54.0, "banjihha": 7200}, {"gu": "송파구", "is_gwanak": false, "하수도(m)_암거": 69167.0, "하수도(m)_개거": 370.0, "하수도(m)_관거": 591502.0, "하수도(m)_U형측구": 10989.0, "횡단하수거(m)": 110.0, "맨홀(개소)": 14378.0, "빗물받이(개소)": 28809.0, "보급률(%)": 100.0, "area": 33.87, "pop": 66.5, "banjihha": 8900}, {"gu": "강동구", "is_gwanak": false, "하수도(m)_암거": 60884.0, "하수도(m)_개거": 1657.0, "하수도(m)_관거": 385349.0, "하수도(m)_U형측구": 6708.0, "횡단하수거(m)": 106.0, "맨홀(개소)": 10412.0, "빗물받이(개소)": 22485.0, "보급률(%)": 100.0, "area": 24.59, "pop": 47.0, "banjihha": 7200}];
+const COLS = ["하수도(m)_암거", "하수도(m)_개거", "하수도(m)_관거", "하수도(m)_U형측구", "횡단하수거(m)", "맨홀(개소)", "빗물받이(개소)", "보급률(%)"];
+let currentCol = COLS[0];
+let normalizeMode = 'abs';
+
+// ── 초기화 ──
+function init() {
+  // 컬럼 선택 버튼
+  const selector = document.getElementById('col-selector');
+  COLS.forEach((col, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = col;
+    btn.className = i === 0 ? 'active' : '';
+    btn.onclick = () => {
+      currentCol = col;
+      selector.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderChart();
+    };
+    selector.appendChild(btn);
+  });
+
+  renderMetrics();
+  renderChart();
+}
+
+// ── 핵심 지표 카드 ──
+function renderMetrics() {
+  const grid = document.getElementById('metric-grid');
+  const gw = DATA.find(d => d.is_gwanak);
+  if (!gw) return;
+
+  // 각 지표에서 관악구 순위 계산
+  const metrics = COLS.slice(0, 4).map(col => {
+    const sorted = DATA.filter(d => d[col] != null).sort((a, b) => b[col] - a[col]);
+    const rank = sorted.findIndex(d => d.is_gwanak) + 1;
+    const avg = sorted.reduce((s, d) => s + d[col], 0) / sorted.length;
+    const val = gw[col];
+    const pctOfAvg = val ? Math.round((val / avg) * 100) : null;
+    return { col, val, rank, total: sorted.length, avg, pctOfAvg };
+  });
+
+  // 반지하 가구 카드
+  grid.innerHTML = `
+    <div class="metric-card highlight">
+      <div class="metric-label">반지하 가구</div>
+      <div class="metric-value danger">29,481</div>
+      <div class="metric-rank">서울 25개 구 중 1위 (최다)</div>
+    </div>
+  ` + metrics.map(m => `
+    <div class="metric-card">
+      <div class="metric-label">${m.col}</div>
+      <div class="metric-value">${m.val != null ? m.val.toLocaleString() : '-'}</div>
+      <div class="metric-rank">25개 구 중 ${m.rank}위 · 평균 대비 ${m.pctOfAvg}%</div>
+    </div>
+  `).join('');
+}
+
+// ── 정규화 설정 ──
+function setNormalize(mode) {
+  normalizeMode = mode;
+  document.querySelectorAll('#normalize-toggle button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderChart();
+}
+
+// ── 차트 렌더 ──
+function renderChart() {
+  const chart = document.getElementById('main-chart');
+
+  // 정규화 계산
+  let items = DATA.filter(d => d[currentCol] != null).map(d => {
+    let val = d[currentCol];
+    let suffix = '';
+    if (normalizeMode === 'area' && d.area) {
+      val = val / d.area;
+      suffix = ' /km²';
+    } else if (normalizeMode === 'pop' && d.pop) {
+      val = val / d.pop;
+      suffix = ' /만명';
+    } else if (normalizeMode === 'banjihha' && d.banjihha) {
+      val = (val / d.banjihha) * 1000;
+      suffix = ' /천가구';
+    }
+    return { gu: d.gu, val, is_gwanak: d.is_gwanak, suffix };
+  });
+
+  // 정렬 (내림차순)
+  items.sort((a, b) => b.val - a.val);
+  const maxVal = Math.max(...items.map(d => d.val));
+  const avg = items.reduce((s, d) => s + d.val, 0) / items.length;
+  const gwItem = items.find(d => d.is_gwanak);
+  const gwRank = items.findIndex(d => d.is_gwanak) + 1;
+
+  chart.innerHTML = items.map(d => {
+    const pct = (d.val / maxVal) * 100;
+    const avgPct = (avg / maxVal) * 100;
+    const cls = d.is_gwanak ? 'gwanak' : 'normal';
+    const labelCls = d.is_gwanak ? 'bar-label is-gwanak' : 'bar-label';
+    const formatted = d.val >= 1000 ? d.val.toLocaleString(undefined, {maximumFractionDigits: 0})
+                    : d.val >= 1 ? d.val.toFixed(1)
+                    : d.val.toFixed(2);
+    return `
+      <div class="bar-row">
+        <div class="${labelCls}">${d.gu.replace('구', '')}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${cls}" style="width:${pct}%">
+            <span>${formatted}${d.suffix}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 인사이트 생성
+  renderInsight(gwItem, gwRank, items.length, avg);
+}
+
+// ── 인사이트 ──
+function renderInsight(gw, rank, total, avg) {
+  const box = document.getElementById('insight-box');
+  if (!gw) { box.innerHTML = ''; return; }
+
+  const pctOfAvg = Math.round((gw.val / avg) * 100);
+  const modeLabel = {
+    'abs': '절대값',
+    'area': 'km²당',
+    'pop': '인구 만명당',
+    'banjihha': '반지하 1천가구당'
+  }[normalizeMode];
+
+  let interpretation = '';
+  if (normalizeMode === 'banjihha') {
+    if (rank > total * 0.6) {
+      interpretation = `반지하 가구 1,000가구당 인프라 밀도에서 관악구는 하위권에 위치합니다. `
+        + `이는 반지하 가구가 서울 최다임에도 불구하고, 이들을 보호할 인프라가 비례적으로 부족하다는 의미입니다. `
+        + `침수 시 동일한 인프라가 더 많은 취약 가구를 감당해야 하는 구조적 과부하 상태입니다.`;
+    } else {
+      interpretation = `이 지표에서는 관악구가 상대적으로 양호한 편입니다. `
+        + `다만 이는 절대량이 많기 때문일 수 있으므로, 다른 지표와 교차 검토가 필요합니다.`;
+    }
+  } else if (normalizeMode === 'area') {
+    if (rank <= total * 0.4) {
+      interpretation = `면적 대비로는 관악구가 중상위권입니다. 이는 관악구의 면적이 상대적으로 넓지 않기 때문일 수 있습니다.`;
+    } else {
+      interpretation = `면적 대비로도 관악구의 인프라 밀도가 낮은 편입니다. `
+        + `경사지와 저지대가 혼재하는 지형 특성을 고려하면, 면적당 인프라 밀도가 더 높아야 합니다.`;
+    }
+  } else {
+    if (rank > total * 0.5) {
+      interpretation = `관악구는 서울 25개 구 중 ${rank}위로, 하위 ${Math.round((rank/total)*100)}%에 해당합니다. `
+        + `서울 평균 대비 ${pctOfAvg}% 수준입니다.`;
+    } else {
+      interpretation = `이 지표에서는 관악구가 ${rank}위로, 서울 평균(${pctOfAvg}%)과 비교할 수 있습니다.`;
+    }
+  }
+
+  box.innerHTML = `
+    <h3>📌 ${currentCol} — ${modeLabel} 기준</h3>
+    <p>
+      관악구 순위: <b>${total}개 구 중 ${rank}위</b>
+      (서울 평균 대비 <b>${pctOfAvg}%</b>)<br>
+      ${interpretation}
+    </p>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
