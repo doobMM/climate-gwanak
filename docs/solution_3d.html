@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>백현진의 여름 — 관악구 해결책 3D 지도</title>
     <script type="text/javascript"
-        src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=3108339D-DC20-37AB-A972-32A0E4D43F63"></script>
+        src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=28C17770-7046-3EDF-81C7-D8DC91406749"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,7 +54,7 @@
 
         /* 범례 */
         #legend {
-            position: fixed; bottom: 16px; left: 16px; z-index: 9999;
+            position: fixed; bottom: 80px; right: 16px; z-index: 9999;
             background: rgba(15,15,25,0.92); border-radius: 10px;
             padding: 14px 18px; color: #ccc;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
@@ -77,7 +77,7 @@
 
         /* 카메라 뷰 버튼 */
         #view-controls {
-            position: fixed; bottom: 16px; right: 16px; z-index: 9999;
+            position: fixed; bottom: 220px; right: 16px; z-index: 9999;
             display: flex; flex-direction: column; gap: 6px;
         }
         #view-controls button {
@@ -238,8 +238,12 @@ function initMap() {
 
         // 지도 로드 후 마커 추가
         setTimeout(function() {
-            addMarkers();
-            document.getElementById('loading').style.display = 'none';
+            var canvas = document.querySelector('#vmap canvas');
+            if (canvas) {
+                mapReady = true;
+                addMarkers();
+                document.getElementById('loading').style.display = 'none';
+            }
         }, 3000);
 
     } catch(e) {
@@ -354,8 +358,35 @@ function flyToBirdEye() {
 }
 
 // ── 초기화 ──
+var mapReady = false;
 window.addEventListener('load', function() {
     setTimeout(initMap, 500);
+
+    // 8초 후 3D 렌더링 확인 — 실패 시 안내
+    setTimeout(function() {
+        if (!mapReady) {
+            var canvas = document.querySelector('#vmap canvas');
+            if (!canvas) {
+                document.getElementById('loading').innerHTML =
+                    '<div style="text-align:center;">' +
+                    '<div style="font-size:48px; margin-bottom:16px;">🗺️</div>' +
+                    '<h3 style="color:#fff;">3D 지도 로드 대기 중</h3>' +
+                    '<p style="color:#888; margin:12px 0; font-size:13px;">' +
+                    'V-World 3D API 도메인 인증 반영에 최대 24시간이 소요될 수 있습니다.<br>' +
+                    '인증키 활용 URL: doobmm.github.io 등록 확인 필요</p>' +
+                    '<a href="solution_map.html" style="display:inline-block; margin-top:16px; ' +
+                    'padding:12px 28px; background:#3498db; color:#fff; text-decoration:none; ' +
+                    'border-radius:8px; font-weight:600;">2D 해결책 지도로 보기 →</a>' +
+                    '<p style="color:#555; margin-top:16px; font-size:11px;">' +
+                    '2D 지도에서도 동일한 해결책 분석 결과를 확인할 수 있습니다.</p>' +
+                    '</div>';
+                document.getElementById('loading').style.display = 'flex';
+            } else {
+                mapReady = true;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    }, 8000);
 });
 </script>
 </body>
